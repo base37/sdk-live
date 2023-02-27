@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Base37 SDK Live 1.0.0 test page</title>
+    <style>
+        body {
+            background-color: darkslategray;
+            color: whitesmoke;
+        }
+    </style>
+</head>
+<body>
+    <noscript>Base37 SDK Live requires javascript enabled</noscript>
+  
+    <h2>
+        Period Test
+    </h2>
+    <p id="period" live-subscription="period:period" style="font-weight:bold">---</p>
+    <small>This will update with the current ms timestamp every second for 10 seconds on load</small>
+    
+    <hr />
+
+    <h2>
+        Button Test
+    </h2>
+    <button id="button" live-trigger="click:button">Click!</button>
+    <p live-subscription="button:button">---</p>
+    <small>Click the button to see new text above with timestamp.</small>
+    
+    <hr />
+    
+    <h2>
+        Promise Test
+    </h2>
+    <button id="promise" live-trigger="click:promise">Fetch!</button>
+    <p live-subscription="promise:promise">---</p>
+    <small>Click the button to see new text above with retrieved from API via REST request.</small>
+    
+    <hr />
+    
+    <h2>
+        Waiting Fail Test
+    </h2>
+    <button id="waitingfail" live-trigger="click:waitingfail">Fetch!</button>
+    <p live-subscription="waitingfail:waitingfail">---</p>
+    <small>Click the button to see new text above with retrieved from API via REST request, with a waiting message displayed during fetch... except it doesn't work as expected - all inputs in the array are processed in order, but only the last result is displayed.</small>
+    
+    <hr />
+
+    <h2>
+        Waiting Test
+    </h2>
+    <button id="waiting" live-trigger="click:waiting">Fetch!</button>
+    <p live-subscription="waiting:waiting">---</p>
+    <small>Click the button to see new text above with retrieved from API via REST request, with a waiting message displayed during fetch. This time working as expected.</small>
+    
+    <hr />
+
+    <h2>
+        Field Test
+    </h2>
+    <input id="field" live-trigger="change:field" />
+    <p live-subscription="field:field">---</p>
+    <small>This will update with the text from the input on field change</small>
+    
+    <hr />
+
+    <h2>
+        Websocket Test
+    </h2>
+    <input placeholder="press 'enter' to send" id="websocket" live-trigger="change:websocket" />
+    <p live-subscription="websocket:websocket">---</p>
+    <small>This will update with the text from the websocket echo message (via websocket.org)</small>
+
+    <script type="module">
+        import { Live as L } from './live.js'
+
+        /* using a function as a processor */
+        L.processors.period = input => ({'#innerHTML': Date.now()})
+        L.listeners.period = {processor: 'period', period: 1000, max: 10}
+
+        L.processors.button = {
+            listener: input => input, 
+            subscription: input => ({'#innerHTML': input.result.message}), 
+            trigger: input => L.listen('button', {message: `clicked at ${Date.now()}`})
+        }
+
+        /* leaving out the listener key implicitly sets it as a pass-through -> listener: input => input */
+        L.processors.promise = {
+            subscription: input => ({'#innerHTML': input.result.message}), 
+            trigger: async input => await L.listen('promise', {message: (await (await fetch('https://random-word-api.herokuapp.com/word?number=5')).json()).join(' ')})
+        }
+
+        L.processors.waitingfail = {
+            subscription: input => ({'#innerHTML': input.result.message}), 
+            trigger: async input => await L.listen('waitingfail', [
+                    {message: 'fetching random words...'}, 
+                    {message: (await (await fetch('https://random-word-api.herokuapp.com/word?number=5')).json()).join(' ')}
+                ])
+        }
+
+        L.processors.waiting = {
+            subscription: input => ({'#innerHTML': input.result.message}), 
+            trigger: async input => {
+                L.listen('waiting', {message: 'fetching random words...'})
+                await L.listen('waiting', {message: (await (await fetch('https://random-word-api.herokuapp.com/word?number=5')).json()).join(' ')})
+            }
+        }
+
+        L.processors.field = {
+            subscription: input => ({'#innerHTML': input.result.message}), 
+            trigger: input => L.listen('field', {message: input.properties.value})
+        }
+
+        const websocket = new WebSocket('wss://ws.postman-echo.com/raw/')
+        L.processors.websocket = {
+            subscription: input => ({'#innerHTML': input.result.message}), 
+            trigger: input => {
+                L.listen('websocket', {message: 'sending via websocket...'})
+                websocket.send(input.properties.value || '[blank]')
+            }
+        }
+        L.listen('websocket', websocket)
+
+
+        /***
+         *  any of the above processors could be re-written using a single function instead of an object and switching via getHandlerType
+         * for example
+
+        L.processors.websocket = function(input) {
+            switch(L.getHandlerType(input)) {
+                case 'listener': 
+                    return input
+                break
+                case 'subscription':
+                    return {'#innerHTML': input.result.message}
+                break
+                case 'trigger': 
+                    L.listen('websocket', {message: 'sending via websocket...'})
+                    websocket.send(input.properties.value || '[blank]')
+                break
+            }
+        }
+
+        */
+
+        await L.start()
+      /* optional to allow for live console inspection of the Live library */
+        window.L = L
+
+    </script>
+</body>
+</html>
