@@ -7,8 +7,11 @@ Intra-app event, data and live-ness management. Part of the [Base37](https://bas
 
 ## Quick Start from CDN
 ```
-<!-- Place before the closing </body> tag -->
-<script src="https://cdn.jsdelivr.net/gh/base37/sdk-live@1.0.0/live.min.js"></script>
+<script type="module">
+	import { Element as E } from 'https://cdn.jsdelivr.net/gh/base37/sdk-live@1.0.0/live.min.js'
+	await L.start()
+</script>
+
 ```
 
 ## Further Reading 
