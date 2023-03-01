@@ -1,5 +1,5 @@
 # Live
-The fastest, simplest way to make your HTML web app real-time with server-side data. Part of the [Base37](https://base37.net/) SDK.
+Intra-app event, data and live-ness management. Part of the [Base37](https://base37.net/) SDK.
 
 **For a complete getting started guide, go to https://base37.net/learning/howto/sdk/live**
 
@@ -8,9 +8,8 @@ The fastest, simplest way to make your HTML web app real-time with server-side d
 ## Quick Start from CDN
 ```
 <!-- Place before the closing </body> tag -->
-<script src="https://cdn.jsdelivr.net/gh/base37/live@1.0.0/live.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/base37/sdk-live@1.0.0/live.min.js"></script>
 ```
-
 
 ## Further Reading 
 

@@ -4,7 +4,7 @@ const Live = Object.defineProperties({}, {
     listeners: {configurable: false, enumerable: true, writable: false, value: {}}, 
     processors: {configurable: false, enumerable: true, writable: false, value: {}}, 
     namespaces: {configurable: false, enumerable: true, writable: false, value: {
-        listener: 'live-listener', subscription: 'live-subscription', trigger: 'live-trigger', id: 'live-id'
+        listener: 'base37-sdk-live-listener', subscription: 'base37-sdk-live-subscription', trigger: 'base37-sdk-live-trigger', id: 'base37-sdk-live-id'
     }}, 
     _subscriptions: {configurable: false, enumerable: false, writable: false, value: {}}, 
     _triggers: {configurable: false, enumerable: false, writable: false, value: {}}, 
