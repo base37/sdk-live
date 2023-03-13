@@ -14,25 +14,24 @@ const Live = Object.defineProperties({}, {
             || (input?.triggersource && input?.map instanceof Object && 'trigger') || 'listener'
     }, 
     listen: {configurable: false, enumerable: true, writable: false, value: async function(key, input={}, force=false, idempotent=false, eventName=undefined, once=false, verbose=false) {
-        let t
+        let result
         if (input instanceof Event) {
-            let result
             for (const d of ['detail', 'data']) {
                 if (!input[d]) continue
                 input[d] instanceof Object && (result = input[d]) && (t=1)
                 if (typeof input[d] === 'string') try {result = ((t=1) && JSON.parse(input[d]))} catch(e) {result = ((t=1) && {[eventName]: input[d]})}
                 t || (result = {[eventName]: input[d]})
             }
-            t = this._runListener(key, result, force, idempotent, verbose) && true
+            result = this._runListener(key, result, force, idempotent, verbose)
         }
         if (input instanceof EventTarget) {
             eventName ||= ((input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement) && 'change')
                 || ((input instanceof globalThis.constructor) && 'hashchange') || ((input instanceof WebSocket) && 'message') || 'click'
-            t = input.addEventListener(eventName, event => this.listen(key, event, force, idempotent, eventName, once, verbose), {once: once}) && true
+            result = input.addEventListener(eventName, event => this.listen(key, event, force, idempotent, eventName, once, verbose), {once: once}) && true
         }
-        if (input instanceof Promise) t = await this._runListener(key, await Promise.resolve(input), force, idempotent, verbose) && true
-        if (Array.isArray(input)) for (const i of input) t = await this._runListener(key, i, force, idempotent, verbose) && true
-        t || await this._runListener(key, input, force, idempotent, verbose)
+        if (input instanceof Promise) result = await this._runListener(key, await Promise.resolve(input), force, idempotent, verbose)
+        if (Array.isArray(input)) for (const i of input) result = await this._runListener(key, i, force, idempotent, verbose)
+        result || await this._runListener(key, input, force, idempotent, verbose)
     }}, 
     _runListener: {configurable: false, enumerable: false, writable: false, value: async function(key, input={}, force=false, idempotent=false, verbose=false) {
         const listener = this.listeners[key] || {processor: key}, processorKey = listener.processor || key 
@@ -74,6 +73,7 @@ const Live = Object.defineProperties({}, {
                 }
             }
         }
+        return true
     }},
     _run: {configurable: false, enumerable: false, writable: false, value: function($this) {
         Object.entries($this.listeners).forEach(entry => {
