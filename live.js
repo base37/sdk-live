@@ -3,9 +3,6 @@ const Live = Object.defineProperties({}, {
     maxDelay: {configurable: false, enumerable: true, writable: true, value: 1000}, 
     listeners: {configurable: false, enumerable: true, writable: false, value: {}}, 
     processors: {configurable: false, enumerable: true, writable: false, value: {}}, 
-    namespaces: {configurable: false, enumerable: true, writable: false, value: {
-        listener: 'b37-listener', subscription: 'b37-subscription', trigger: 'b37-trigger', id: 'b37-id'
-    }}, 
     _subscriptions: {configurable: false, enumerable: false, writable: false, value: {}}, 
     _triggers: {configurable: false, enumerable: false, writable: false, value: {}}, 
     start: {configurable: false, enumerable: true, writable: false, value: async function() {
@@ -114,7 +111,8 @@ const Live = Object.defineProperties({}, {
             }
         })
         const processElement = function(element, type) {
-            const cleanVectors = [], listAttribute = (element.getAttribute(TYPE) || ''), 
+            const attrName = type === 'subscription' ? 'b37-from' : 'b37-to'
+            const cleanVectors = [], listAttribute = (element.getAttribute(attrName) || ''), 
                 flags = type == 'subscription' ? $this._subscriptions: $this._triggers
             let firstPass = false, id = element.getAttribute('b37-id'), listAttributeValueChanged
             if (!element.hasAttribute('b37-id')) {
@@ -134,7 +132,7 @@ const Live = Object.defineProperties({}, {
                 Object.keys(flags[id]).forEach(vector => {
                     const vectorSplit = vector.split(':')
                     if (!vectorList.includes(vector)) {
-                        const eventType = type == 'subscription' ? `b37-listener-run-${vectorSplit[0]}` : vectorSplit[0]
+                        const eventType = type == 'subscription' ? `b37ListenerRun-${vectorSplit[0]}` : vectorSplit[0]
                         const listeningElement =  type == 'subscription' ? window : element
                         listeningElement.removeEventListener(eventType, flags[id][vector])
                     }
@@ -193,15 +191,15 @@ const Live = Object.defineProperties({}, {
                 }
             })
             if (firstPass && listAttributeValueChanged) {
-                element.setAttribute(TYPE, cleanVectors.sort().join(' '))
+                element.setAttribute(attrName, cleanVectors.sort().join(' '))
             } else if (firstPass && (listAttribute != vectorList.join(' '))) {
-                element.setAttribute(TYPE, vectorList.sort().join(' '))
+                element.setAttribute(attrName, vectorList.sort().join(' '))
             }
         }
         document.querySelectorAll(`[b37-from]`).forEach(subscribedElement => {
             processElement(subscribedElement, 'subscription')
         })
-        document.querySelectorAll(`[b37-on]`).forEach(triggeringElement => {
+        document.querySelectorAll(`[b37-to]`).forEach(triggeringElement => {
             processElement(triggeringElement, 'trigger')
         })
         globalThis.requestIdleCallback(function() { $this._run($this) }, {options: $this.maxDelay || 1000})
