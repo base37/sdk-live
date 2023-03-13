@@ -4,7 +4,7 @@ const Live = Object.defineProperties({}, {
     listeners: {configurable: false, enumerable: true, writable: false, value: {}}, 
     processors: {configurable: false, enumerable: true, writable: false, value: {}}, 
     namespaces: {configurable: false, enumerable: true, writable: false, value: {
-        listener: 'base37-sdk-live-listener', subscription: 'base37-sdk-live-subscription', trigger: 'base37-sdk-live-trigger', id: 'base37-sdk-live-id'
+        listener: 'b37-listener', subscription: 'b37-subscription', trigger: 'b37-trigger', id: 'b37-id'
     }}, 
     _subscriptions: {configurable: false, enumerable: false, writable: false, value: {}}, 
     _triggers: {configurable: false, enumerable: false, writable: false, value: {}}, 
@@ -75,8 +75,8 @@ const Live = Object.defineProperties({}, {
             if (force || !listener.period || (listener.period && (((listener.previous || 0) + listener.period) <= now))) {
                 if (!force && !listener.expired && (listener.expires && (listener.expires <= now))) {
                     listener.expired = true
-                    globalThis.dispatchEvent(new CustomEvent(`${this.namespaces.listener}-expired`, {detail: {listener: key, input: input}}))
-                    globalThis.dispatchEvent(new CustomEvent(`${this.namespaces.listener}-expired-${key}`, {detail: {listener: key, input: input}}))
+                    globalThis.dispatchEvent(new CustomEvent(`b37ListenerExpired`, {detail: {listener: key, input: input}}))
+                    globalThis.dispatchEvent(new CustomEvent(`b37ListenerExpired-${key}`, {detail: {listener: key, input: input}}))
                 } else {
                     input = input instanceof Object ? input : (listener.input instanceof Object ? listener.input : {})
                     if (!idempotent) {
@@ -86,23 +86,23 @@ const Live = Object.defineProperties({}, {
                         listener.next = now + listener.period
                     }
                     const result = await processor(input)
-                    globalThis.dispatchEvent(new CustomEvent(`${this.namespaces.listener}-run`, {detail: {listener: key, result: result}}))
-                    globalThis.dispatchEvent(new CustomEvent(`${this.namespaces.listener}-run-${key}`, {detail: {listener: key, result: result}}))
+                    globalThis.dispatchEvent(new CustomEvent(`b37-listener-run`, {detail: {listener: key, result: result}}))
+                    globalThis.dispatchEvent(new CustomEvent(`b37-listener-run-${key}`, {detail: {listener: key, result: result}}))
                     if (listener.max && !listener.maxed && (listener.count == listener.max)) {
                         listener.maxed = true
-                        globalThis.dispatchEvent(new CustomEvent(`${this.namespaces.listener}-maxed`, {detail: {listener: key, input: input}}))
-                        globalThis.dispatchEvent(new CustomEvent(`${this.namespaces.listener}-maxed-${key}`, {detail: {listener: key, input: input}}))
+                        globalThis.dispatchEvent(new CustomEvent(`b37-listener-maxed`, {detail: {listener: key, input: input}}))
+                        globalThis.dispatchEvent(new CustomEvent(`b37-listener-maxed-${key}`, {detail: {listener: key, input: input}}))
                     }
                     if (listener.expires && listener.period && ((now + listener.period) >= listener.expires)) {
                         listener.expired = true
-                        globalThis.dispatchEvent(new CustomEvent(`${this.namespaces.listener}-expired`, {detail: {listener: key, input: input}}))
-                        globalThis.dispatchEvent(new CustomEvent(`${this.namespaces.listener}-expired-${key}`, {detail: {listener: key, input: input}}))
+                        globalThis.dispatchEvent(new CustomEvent(`b37ListenerExpired`, {detail: {listener: key, input: input}}))
+                        globalThis.dispatchEvent(new CustomEvent(`b37ListenerExpired-${key}`, {detail: {listener: key, input: input}}))
                     }
                 }
             } else if (!force && listener.period && (listener.next && (listener.next > now))) {
                 if (verbose || listener.verbose) {
-                    globalThis.dispatchEvent(new CustomEvent(`${this.namespaces.listener}-passed`, {detail: {listener: key, input: input}}))
-                    globalThis.dispatchEvent(new CustomEvent(`${this.namespaces.listener}-passed-${key}`, {detail: {listener: key, input: input}}))
+                    globalThis.dispatchEvent(new CustomEvent(`b37-listener-passed`, {detail: {listener: key, input: input}}))
+                    globalThis.dispatchEvent(new CustomEvent(`b37-listener-passed-${key}`, {detail: {listener: key, input: input}}))
                 }
             }
         }
@@ -114,14 +114,14 @@ const Live = Object.defineProperties({}, {
             }
         })
         const processElement = function(element, type) {
-            const cleanVectors = [], listAttribute = (element.getAttribute($this.namespaces[type]) || ''), 
+            const cleanVectors = [], listAttribute = (element.getAttribute(TYPE) || ''), 
                 flags = type == 'subscription' ? $this._subscriptions: $this._triggers
-            let firstPass = false, id = element.getAttribute($this.namespaces.id), listAttributeValueChanged
-            if (!element.hasAttribute($this.namespaces.id)) {
+            let firstPass = false, id = element.getAttribute('b37-id'), listAttributeValueChanged
+            if (!element.hasAttribute('b37-id')) {
                 firstPass = true
                 listAttributeValueChanged = false
                 id = crypto.randomUUID()
-                element.setAttribute($this.namespaces.id, id)
+                element.setAttribute('b37-id', id)
             } else if (!firstPass && id && flags[id] instanceof Object 
                 && Object.keys(flags[id]).sort().join(' ') != listAttribute) {
                 firstPass = true
@@ -134,7 +134,7 @@ const Live = Object.defineProperties({}, {
                 Object.keys(flags[id]).forEach(vector => {
                     const vectorSplit = vector.split(':')
                     if (!vectorList.includes(vector)) {
-                        const eventType = type == 'subscription' ? `${this.namespaces.listener}-run-${vectorSplit[0]}` : vectorSplit[0]
+                        const eventType = type == 'subscription' ? `b37-listener-run-${vectorSplit[0]}` : vectorSplit[0]
                         const listeningElement =  type == 'subscription' ? window : element
                         listeningElement.removeEventListener(eventType, flags[id][vector])
                     }
@@ -188,20 +188,20 @@ const Live = Object.defineProperties({}, {
                             }
                         }
                     }
-                    const eventType = type == 'subscription' ? `${$this.namespaces.listener}-run-${vectorSplit[0]}` : vectorSplit[0], listeningElement =  type == 'subscription' ? window : element
+                    const eventType = type == 'subscription' ? `b37ListenerRun-${vectorSplit[0]}` : vectorSplit[0], listeningElement =  type == 'subscription' ? window : element
                     listeningElement.addEventListener(eventType, flags[id][vector])
                 }
             })
             if (firstPass && listAttributeValueChanged) {
-                element.setAttribute($this.namespaces.type, cleanVectors.sort().join(' '))
+                element.setAttribute(TYPE, cleanVectors.sort().join(' '))
             } else if (firstPass && (listAttribute != vectorList.join(' '))) {
-                element.setAttribute($this.namespaces.type, vectorList.sort().join(' '))
+                element.setAttribute(TYPE, vectorList.sort().join(' '))
             }
         }
-        document.querySelectorAll(`[${$this.namespaces.subscription}]`).forEach(subscribedElement => {
+        document.querySelectorAll(`[b37-from]`).forEach(subscribedElement => {
             processElement(subscribedElement, 'subscription')
         })
-        document.querySelectorAll(`[${$this.namespaces.trigger}]`).forEach(triggeringElement => {
+        document.querySelectorAll(`[b37-on]`).forEach(triggeringElement => {
             processElement(triggeringElement, 'trigger')
         })
         globalThis.requestIdleCallback(function() { $this._run($this) }, {options: $this.maxDelay || 1000})
