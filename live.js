@@ -207,5 +207,4 @@ const Live = Object.defineProperties({}, {
         globalThis.requestIdleCallback(function() { $this._run($this) }, {options: $this.maxDelay || 1000})
     }}
 })
-
 export { Live }
