@@ -18,7 +18,7 @@
     <h2>
         Period Test
     </h2>
-    <p id="period" base37-sdk-live-subscription="period:period" style="font-weight:bold">---</p>
+    <p id="period" b37-from="period:period" style="font-weight:bold">---</p>
     <small>This will update with the current ms timestamp every second for 10 seconds on load</small>
     
     <hr />
@@ -26,8 +26,8 @@
     <h2>
         Button Test
     </h2>
-    <button id="button" base37-sdk-live-trigger="click:button">Click!</button>
-    <p base37-sdk-live-subscription="button:button">---</p>
+    <button id="button" b37-do="click:button">Click!</button>
+    <p b37-from="button">---</p>
     <small>Click the button to see new text above with timestamp.</small>
     
     <hr />
@@ -35,8 +35,8 @@
     <h2>
         Promise Test
     </h2>
-    <button id="promise" base37-sdk-live-trigger="click:promise">Fetch!</button>
-    <p base37-sdk-live-subscription="promise:promise">---</p>
+    <button id="promise" b37-do="promise">Fetch!</button>
+    <p b37-from="promise">---</p>
     <small>Click the button to see new text above with retrieved from API via REST request.</small>
     
     <hr />
@@ -44,8 +44,8 @@
     <h2>
         Waiting Fail Test
     </h2>
-    <button id="waitingfail" base37-sdk-live-trigger="click:waitingfail">Fetch!</button>
-    <p base37-sdk-live-subscription="waitingfail:waitingfail">---</p>
+    <button id="waitingfail" b37-do="waitingfail">Fetch!</button>
+    <p b37-from="waitingfail">---</p>
     <small>Click the button to see new text above with retrieved from API via REST request, with a waiting message displayed during fetch... except it doesn't work as expected - all inputs in the array are processed in order, but only the last result is displayed.</small>
     
     <hr />
@@ -53,8 +53,8 @@
     <h2>
         Waiting Test
     </h2>
-    <button id="waiting" base37-sdk-live-trigger="click:waiting">Fetch!</button>
-    <p base37-sdk-live-subscription="waiting:waiting">---</p>
+    <button id="waiting" b37-do="waiting">Fetch!</button>
+    <p b37-from="waiting">---</p>
     <small>Click the button to see new text above with retrieved from API via REST request, with a waiting message displayed during fetch. This time working as expected.</small>
     
     <hr />
@@ -62,8 +62,8 @@
     <h2>
         Field Test
     </h2>
-    <input id="field" base37-sdk-live-trigger="change:field" />
-    <p base37-sdk-live-subscription="field:field">---</p>
+    <input id="field" b37-do="change:field" />
+    <p b37-from="field">---</p>
     <small>This will update with the text from the input on field change</small>
     
     <hr />
@@ -71,8 +71,8 @@
     <h2>
         Websocket Test
     </h2>
-    <input placeholder="press 'enter' to send" id="websocket" base37-sdk-live-trigger="change:websocket" />
-    <p base37-sdk-live-subscription="websocket:websocket">---</p>
+    <input placeholder="press 'enter' to send" id="websocket" b37-on="websocket" />
+    <p b37-from="websocket">---</p>
     <small>This will update with the text from the websocket echo message (via websocket.org)</small>
 
     <script type="module">
