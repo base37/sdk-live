@@ -20,26 +20,23 @@ const Live = Object.defineProperties({}, {
             toElement.addEventListener(...this._triggers[toElement][givenToValue])
         }
     }},
-    _parseToAttribute: {configurable: false, enumerable: false, writable: false, value: function(toElement) {
-        const toOptionsList = (toElement.getAttribute('b37-to-options')||'').split(' '),
-            toValuesList = (toElement.getAttribute('b37-to')||'').split(' '), toParams = [],
-            toOptionsParsedList = []
-        for (let toValueIndex=0,toValuesListLength = toValuesList.length; toValueIndex < toValuesListLength; ++toValueIndex) {
-            let toOptionsParam = toOptionsList[toValueIndex]
-            toOptionsParam === '$' && (toOptionsParam = toOptionsParsedList.at(-1))
-            toOptionsParam && toOptionsParam.length>1 & toOptionsParam[0] === '$' && (toOptionsParam = toOptionsParsedList.at(toOptionsParam.slice(1)))
-            toOptionsParam && typeof toOptionsParam === 'string' && (toOptionsParam = JSON.parse(toOptionsParam))
-            toOptionsParam ||= {}
-            toOptionsParsedList.push(toOptionsParam)
-            toParams[toValueIndex] = [toValuesList[toValueIndex], toOptionsParam]
+    _parseToFromAttribute: {configurable: false, enumerable: false, writable: false, value: function(element, toFrom) {
+        const optionsList = (element.getAttribute(`b37-${toFrom}-options`)||'').split(' '),
+            valuesList = (element.getAttribute(`b37-${toFrom}`)||'').split(' '), params = [], optionsParsedList = []
+        for (let valueIndex=0,valuesListLength = valuesList.length; valueIndex < valuesListLength; ++valueIndex) {
+            let optionsParam = optionsList[valueIndex]
+            optionsParam === '$' && (optionsParam = optionsParsedList.at(-1))
+            optionsParam && optionsParam.length>1 & optionsParam[0] === '$' && (optionsParam = optionsParsedList.at(optionsParam.slice(1)))
+            optionsParam && typeof optionsParam === 'string' && (optionsParam = JSON.parse(optionsParam))
+            optionsParam ||= {}
+            optionsParsedList.push(optionsParam)
+            params[valueIndex] = [valuesList[valueIndex], optionsParam]
         }
-        return toParams
+        return params
     }},
 
 
     _configureSubscription: {configurable: false, enumerable: false, writable: false, value: function(addOrRemove, fromElement, fromValue, fromOptions) {
-    }},
-    _parseFromAttribute: {configurable: false, enumerable: false, writable: false, value: function(fromElement) {
     }},
 
 
@@ -50,10 +47,10 @@ const Live = Object.defineProperties({}, {
     }},
     _processAddedElement: {configurable: false, enumerable: false, writable: false, value: function(element) {
         if (element.hasAttribute('b37-to')) {
-            for (const toParam of this._parseToAttribute(element)) this._configureTrigger('add', element, ...toParam)
+            for (const toParam of this._parseToFromAttribute(element, 'to')) this._configureTrigger('add', element, ...toParam)
         }
         if (element.hasAttribute('b37-from')) {
-            for (const fromParam of this._parseFromAttribute(element)) this._configureSubscription('add', element, ...fromParam)
+            for (const fromParam of this._parseToFromAttribute(element, 'from')) this._configureSubscription('add', element, ...fromParam)
         }
         if (element.tagName.includes('-') && element.shadowRoot && element.b37Dataset) {
             this._attachLiveToElement(element)
@@ -67,11 +64,11 @@ const Live = Object.defineProperties({}, {
                 }
                 if (mutationRecord.type === 'attributes') {
                     if (mutationRecord.attributeName === 'b37-to') {
-                        for (const toParam of this._parseToAttribute(toElement)) this._configureTrigger('remove', toElement, ...toParam)
-                        for (const toParam of this._parseToAttribute(toElement)) this._configureTrigger('add', toElement, ...toParam)
+                        for (const toParam of this._parseToFromAttribute(toElement, 'to')) this._configureTrigger('remove', toElement, ...toParam)
+                        for (const toParam of this._parseToFromAttribute(toElement, 'to')) this._configureTrigger('add', toElement, ...toParam)
                     } else if (mutationRecord.attributeName === 'b37-from') {
-                        for (const fromParam of this._parseFromAttribute(fromElement)) this._configureSubscription('remove', fromElement, ...fromParam)
-                        for (const fromParam of this._parseFromAttribute(fromElement)) this._configureSubscription('add', fromElement, ...fromParam)
+                        for (const fromParam of this._parseToFromAttribute(fromElement, 'from')) this._configureSubscription('remove', fromElement, ...fromParam)
+                        for (const fromParam of this._parseToFromAttribute(fromElement, 'from')) this._configureSubscription('add', fromElement, ...fromParam)
                     }
                 }
             }
