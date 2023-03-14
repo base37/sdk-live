@@ -11,7 +11,7 @@ const Live = Object.defineProperties({}, {
     start: {configurable: false, enumerable: true, writable: false, value: async function() {
         const $this = this
         globalThis.requestIdleCallback ||= function(handler) {let sT = Date.now(); return globalThis.setTimeout(function() {handler({didTimeout: false, timeRemaining: function() {return Math.max(0, 50.0 - (Date.now() - sT)) }})}, 1)}
-        globalThis.requestIdleCallback(function() { $this._run($this) }, {options: $this.maxDelay || 1000})
+        globalThis.requestIdleCallback(function() {$this._run($this)}, {options: $this.maxDelay || 1000})
     }}, 
     listen: {configurable: false, enumerable: true, writable: false, value: async function(key, input={}, force=false, idempotent=false, eventName=undefined, once=false, verbose=false) {
         let result
@@ -33,45 +33,17 @@ const Live = Object.defineProperties({}, {
         if (Array.isArray(input)) for (const i of input) result = await this._runListener(key, i, force, idempotent, verbose)
         result || await this._runListener(key, input, force, idempotent, verbose)
     }}, 
-    _runListener: {configurable: false, enumerable: false, writable: false, value: async function(key, input={}, force=false, idempotent=false, verbose=false) {
-        const listener = this.listeners[key] || {processor: key}, processorKey = listener.processor || key, 
-            processor = this.processors[processorKey]?.listener || this.processors[processorKey] || (input => input), now = Date.now()
-        if (!((listener instanceof Object) && (force || (!force && !listener.expired && !listener.maxed)))) return true
-        if (force || !listener.period || (listener.period && (((listener.previous || 0) + listener.period) <= now))) {
-            if (!force && !listener.expired && (listener.expires && (listener.expires <= now))) {
-                listener.expired = true
-                globalThis.dispatchEvent(new CustomEvent(`b37ListenerExpired`, {detail: {listener: key, input: input}}))
-                globalThis.dispatchEvent(new CustomEvent(`b37ListenerExpired-${key}`, {detail: {listener: key, input: input}}))
-            } else {
-                input = (input instanceof Object && input) || (listener.input instanceof Object && listener.input) || {}
-                if (!idempotent) {
-                    listener.previous = now
-                    listener.count = (listener.count || 0) + 1
-                    const previous = listener.previous, count = listener.count
-                    listener.next = now + listener.period
-                }
-                const result = await processor(input)
-                globalThis.dispatchEvent(new CustomEvent(`b37ListenerRun`, {detail: {listener: key, result: result}}))
-                globalThis.dispatchEvent(new CustomEvent(`b37ListenerRun-${key}`, {detail: {listener: key, result: result}}))
-                listener.max && !listener.maxed && (listener.count == listener.max) && (listener.maxed = true) 
-                    && globalThis.dispatchEvent(new CustomEvent(`b37ListenerMaxed`, {detail: {listener: key, input: input}}))
-                    && globalThis.dispatchEvent(new CustomEvent(`b37ListenerMaxed-${key}`, {detail: {listener: key, input: input}}))
 
-                listener.expires && listener.period && ((now + listener.period) >= listener.expires) && (listener.expired = true)
-                    && globalThis.dispatchEvent(new CustomEvent(`b37ListenerExpired`, {detail: {listener: key, input: input}}))
-                    && globalThis.dispatchEvent(new CustomEvent(`b37ListenerExpired-${key}`, {detail: {listener: key, input: input}}))
-            }
-        } else if (!force && listener.period && (listener.next && (listener.next > now))) {
-            if (verbose || listener.verbose) {
-                globalThis.dispatchEvent(new CustomEvent(`b37-listener-passed`, {detail: {listener: key, input: input}}))
-                globalThis.dispatchEvent(new CustomEvent(`b37-listener-passed-${key}`, {detail: {listener: key, input: input}}))
-            }
-        }
-        return true
-    }},
+
     _run: {configurable: false, enumerable: false, writable: false, value: function($this) {
         for (const k in $this.listeners) if ($this.listeners[k].period) $this._runListener(k)
-        const processElement = function(element, type) {
+        for (const subscribedElement of document.querySelectorAll(`[b37-from]`)) $this._processElement(subscribedElement, 'subscription')
+        for (const triggeringElement of document.querySelectorAll(`[b37-to]`)) $this._processElement(triggeringElement, 'trigger')
+        globalThis.requestIdleCallback(function() { $this._run($this) }, {options: $this.maxDelay || 1000})
+    }}
+
+
+    _processElement: {configurable: false, enumerable: false, writable: false, value: function(element, type) {
             const attrName = type === 'subscription' ? 'b37-from' : 'b37-to'
             const cleanVectors = [], listAttribute = (element.getAttribute(attrName) || ''), flags = $this[`_${type}s`]
             let firstPass = false, id = element.getAttribute('b37-id'), listAttributeValueChanged
@@ -141,10 +113,54 @@ const Live = Object.defineProperties({}, {
                 }
             }
             firstPass && element.setAttribute(attrName, (listAttributeValueChanged?cleanVectors:vectorList).sort().join(' '))
-        }
-        for (const subscribedElement of document.querySelectorAll(`[b37-from]`)) processElement(subscribedElement, 'subscription')
-        for (const triggeringElement of document.querySelectorAll(`[b37-to]`)) processElement(triggeringElement, 'trigger')
-        globalThis.requestIdleCallback(function() { $this._run($this) }, {options: $this.maxDelay || 1000})
     }}
+
+
+
+
+
+    _runListener: {configurable: false, enumerable: false, writable: false, value: async function(key, input={}, force=false, idempotent=false, verbose=false) {
+        const listener = this.listeners[key] || {processor: key}, processorKey = listener.processor || key, 
+            processor = this.processors[processorKey]?.listener || this.processors[processorKey] || (input => input), now = Date.now()
+        if (!((listener instanceof Object) && (force || (!force && !listener.expired && !listener.maxed)))) return true
+        if (force || !listener.period || (listener.period && (((listener.previous || 0) + listener.period) <= now))) {
+            if (!force && !listener.expired && (listener.expires && (listener.expires <= now))) {
+                listener.expired = true
+                globalThis.dispatchEvent(new CustomEvent(`b37ListenerExpired`, {detail: {listener: key, input: input}}))
+                globalThis.dispatchEvent(new CustomEvent(`b37ListenerExpired-${key}`, {detail: {listener: key, input: input}}))
+            } else {
+                input = (input instanceof Object && input) || (listener.input instanceof Object && listener.input) || {}
+                if (!idempotent) {
+                    listener.previous = now
+                    listener.count = (listener.count || 0) + 1
+                    const previous = listener.previous, count = listener.count
+                    listener.next = now + listener.period
+                }
+                const result = await processor(input)
+                globalThis.dispatchEvent(new CustomEvent(`b37ListenerRun`, {detail: {listener: key, result: result}}))
+                globalThis.dispatchEvent(new CustomEvent(`b37ListenerRun-${key}`, {detail: {listener: key, result: result}}))
+                listener.max && !listener.maxed && (listener.count == listener.max) && (listener.maxed = true) 
+                    && globalThis.dispatchEvent(new CustomEvent(`b37ListenerMaxed`, {detail: {listener: key, input: input}}))
+                    && globalThis.dispatchEvent(new CustomEvent(`b37ListenerMaxed-${key}`, {detail: {listener: key, input: input}}))
+
+                listener.expires && listener.period && ((now + listener.period) >= listener.expires) && (listener.expired = true)
+                    && globalThis.dispatchEvent(new CustomEvent(`b37ListenerExpired`, {detail: {listener: key, input: input}}))
+                    && globalThis.dispatchEvent(new CustomEvent(`b37ListenerExpired-${key}`, {detail: {listener: key, input: input}}))
+            }
+        } else if (!force && listener.period && (listener.next && (listener.next > now))) {
+            if (verbose || listener.verbose) {
+                globalThis.dispatchEvent(new CustomEvent(`b37-listener-passed`, {detail: {listener: key, input: input}}))
+                globalThis.dispatchEvent(new CustomEvent(`b37-listener-passed-${key}`, {detail: {listener: key, input: input}}))
+            }
+        }
+        return true
+    }},
+
+
+
+
+
+
+
 })
 export { Live }
