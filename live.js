@@ -17,20 +17,18 @@ const Live = Object.defineProperties({}, {
         }
         globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
 
-        const connectTrigger = (toElement, toValue, toOptions) => {
+        const configureTrigger = (toElement, toValue, toOptions, remove=false) => {
             const givenToValue = toValue
             toValue.includes(':') || (toValue = `:${toValue}`)
             let [eventName, processorName] = toValue.split(':')
             eventName ||= (['HTMLInputElement', 'HTMLSelectElement', 'HTMLTextAreaElement']).includes(toElement.constructor.name) && 'change' || 'click'
-            const triggerOptions = JSON.parse(toElement.getAttribute('b37-to-options')||'{}') || {}
-            toElement.addEventListener(eventName, event => this.processors[processorName].trigger(toElement, event), triggerOptions)            
-        }, disconnectTrigger = (toElement, toValue) => {
-            toValue.includes(':') || (toValue = `:${toValue}`)
-            let [eventName, processorName] = toValue.split(':')
-            if (!(this.processors[processorName]||{})?.trigger) return
-            eventName ||= (['HTMLInputElement', 'HTMLSelectElement', 'HTMLTextAreaElement']).includes(toElement.constructor.name) && 'change' || 'click'
-
-
+            this._triggers[toElement] ||= {}
+            if (remove && this._triggers[toElement][givenToValue]) {
+                toElement.removeEventListener(...this._triggers[toElement][givenToValue])
+            } else {
+                this._triggers[toElement][givenToValue] = [eventName, event => (this.processors[processorName]?.trigger || (() => undefined))(toElement, event, toOptions), toOptions]
+                toElement.addEventListener(...this._triggers[toElement][givenToValue])
+            }
         }
 
         for (const toElement of document.querySelectorAll(`[b37-to]`)) {
@@ -46,7 +44,7 @@ const Live = Object.defineProperties({}, {
                 toOptionsParsedList.push(toOptionsParam)
                 toParams[toValueIndex] = [toValuesList[toValueIndex], toOptionsParam]
             }
-            for (const toParam of toParams) connectTrigger(toElement, ...toParams)
+            for (const toParam of toParams) configureTrigger(toElement, ...toParams)
         }
 
         this._globalObserver ||= new MutationObserver(async mutationList => {
