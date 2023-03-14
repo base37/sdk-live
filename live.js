@@ -5,7 +5,7 @@ const Live = Object.defineProperties({}, {
     processors: {configurable: false, enumerable: true, writable: false, value: {}},
     _subscriptions: {configurable: false, enumerable: false, writable: false, value: {}},
     _triggers: {configurable: false, enumerable: false, writable: false, value: {}},
-    _globalObserver: {configurable: false, enumerable: false, writable: true, value: undefined},
+    _b37LiveObserver: {configurable: false, enumerable: false, writable: true, value: undefined},
     fromElements: {configurable: false, enumerable: true, writable: false, value: {}},
     _configureTrigger: {configurable: false, enumerable: false, writable: false, value: function(addOrRemove, toElement, toValue, toOptions) {
         const givenToValue = toValue
@@ -35,6 +35,17 @@ const Live = Object.defineProperties({}, {
         }
         return toParams
     }},
+    _attachLiveToElement: {configurable: false, enumerable: false, writable: false, value: function(element) {
+
+    }},
+    _processAddedElement: {configurable: false, enumerable: false, writable: false, value: function(element) {
+        if (element.hasAttribute('b37-to')) {
+            for (const toParam of this._parseToAttribute(element)) this._configureTrigger('add', element, ...toParam)
+        }
+        if (element.tagName.includes('-') && element.b37Dataset) {
+            this._attachLiveToElement(element)
+        }
+    }},
     start: {configurable: false, enumerable: true, writable: false, value: async function() {
         globalThis.requestIdleCallback ||= function(handler) {let sT = Date.now(); return globalThis.setTimeout(function() {handler({didTimeout: false, timeRemaining: function() {return Math.max(0, 50.0 - (Date.now() - sT)) }})}, 1)}
         const run = () => {
@@ -43,17 +54,12 @@ const Live = Object.defineProperties({}, {
         }
         globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
 
-        for (const toElement of document.querySelectorAll(`[b37-to]`)) {
-            for (const toParam of this._parseToAttribute(toElement)) this._configureTrigger('add', toElement, ...toParam)
-        }
+        for (const element of document.getElementsByTagName('*')) this._processAddedElement(element)
 
-        this._globalObserver ||= new MutationObserver(async mutationList => {
+        this._b37ElementThemeObserver ||= new MutationObserver(async mutationList => {
             for (const mutationRecord of mutationList) {
                 if (mutationRecord.type === 'childList') {
-                    for (const toElement of mutationRecord.addedNodes) {
-                        if (!toElement.hasAttribute('b37-to')) continue
-                        for (const toParam of this._parseToAttribute(toElement)) this._configureTrigger('add', toElement, ...toParam)
-                    }
+                    for (const element of mutationRecord.addedNodes) this._processAddedElement(element)
                 }
                 if (mutationRecord.type === 'attributes') {
                     if (mutationRecord.attributeName === 'b37-to') {
@@ -63,12 +69,11 @@ const Live = Object.defineProperties({}, {
                 }
             }
         })
-        this._globalObserver.observe(document, {subtree: true, childList: true, attributes: true, attributeOldValue: true, attributeFilter: ['b37-to']})
+        this._b37ElementThemeObserver.observe(document, {subtree: true, childList: true, attributes: true, attributeOldValue: true, attributeFilter: ['b37-to']})
 
 
         //let's see if a mutationObserver is required for the below...
         for (const subscribedElement of document.querySelectorAll(`[b37-from]`)) this._processElement(subscribedElement, 'subscription')
-        for (const triggeringElement of document.querySelectorAll(`[b37-to]`)) this._processElement(triggeringElement, 'trigger')
 
     }},
     listen: {configurable: false, enumerable: true, writable: false, value: async function(key, input={}, force=false, idempotent=false, eventName=undefined, once=false, verbose=false) {
