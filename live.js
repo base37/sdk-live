@@ -27,10 +27,10 @@ const Live = Object.defineProperties({}, {
             toValuesList = (toElement.getAttribute('b37-to')||'').split(' '), toParams = [], 
             toOptionsParsedList = []
         for (let toValueIndex=0,toValuesListLength = toValuesList.length; toValueIndex < toValuesListLength; ++toValueIndex) {
-            toOptionsParam = toOptionsList[toValueIndex]
+            let toOptionsParam = toOptionsList[toValueIndex]
             toOptionsParam === '$' && (toOptionsParam = toOptionsParsedList.at(-1))
             toOptionsParam && toOptionsParam.length>1 & toOptionsParam[0] === '$' && (toOptionsParam = toOptionsParsedList.at(toOptionsParam.slice(1)))
-            typeof toOptionsParam === 'string' && (toOptionsParam = JSON.parse(toOptionsParam))
+            toOptionsParam && typeof toOptionsParam === 'string' && (toOptionsParam = JSON.parse(toOptionsParam))
             toOptionsParam ||= {}
             toOptionsParsedList.push(toOptionsParam)
             toParams[toValueIndex] = [toValuesList[toValueIndex], toOptionsParam]
@@ -48,7 +48,7 @@ const Live = Object.defineProperties({}, {
         globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
 
         for (const toElement of document.querySelectorAll(`[b37-to]`)) {
-            for (const toParam of toParams) this._configureTrigger(toElement, ...this._parseToAttribute(toElement))
+            for (const toParam of this._parseToAttribute(toElement)) this._configureTrigger(toElement, ...toParam)
         }
 
         this._globalObserver ||= new MutationObserver(async mutationList => {
