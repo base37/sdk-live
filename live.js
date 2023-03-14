@@ -35,6 +35,15 @@ const Live = Object.defineProperties({}, {
         }
         return toParams
     }},
+
+
+    _configureSubscription: {configurable: false, enumerable: false, writable: false, value: function(addOrRemove, fromElement, fromValue, fromOptions) {
+    }},
+    _parseFromAttribute: {configurable: false, enumerable: false, writable: false, value: function(fromElement) {
+    }},
+
+
+
     _attachLiveToElement: {configurable: false, enumerable: false, writable: false, value: function(element) {
         for (const subElement of element.shadowRoot.getElementsByTagName('*')) this._processAddedElement(subElement)
         this._setupObserver(element, element.shadowRoot)
@@ -42,6 +51,9 @@ const Live = Object.defineProperties({}, {
     _processAddedElement: {configurable: false, enumerable: false, writable: false, value: function(element) {
         if (element.hasAttribute('b37-to')) {
             for (const toParam of this._parseToAttribute(element)) this._configureTrigger('add', element, ...toParam)
+        }
+        if (element.hasAttribute('b37-from')) {
+            for (const fromParam of this._parseFromAttribute(element)) this._configureSubscription('add', element, ...fromParam)
         }
         if (element.tagName.includes('-') && element.shadowRoot && element.b37Dataset) {
             this._attachLiveToElement(element)
@@ -57,11 +69,14 @@ const Live = Object.defineProperties({}, {
                     if (mutationRecord.attributeName === 'b37-to') {
                         for (const toParam of this._parseToAttribute(toElement)) this._configureTrigger('remove', toElement, ...toParam)
                         for (const toParam of this._parseToAttribute(toElement)) this._configureTrigger('add', toElement, ...toParam)
+                    } else if (mutationRecord.attributeName === 'b37-from') {
+                        for (const fromParam of this._parseFromAttribute(fromElement)) this._configureSubscription('remove', fromElement, ...fromParam)
+                        for (const fromParam of this._parseFromAttribute(fromElement)) this._configureSubscription('add', fromElement, ...fromParam)
                     }
                 }
             }
         })
-        observerRoot._b37LiveObserver.observe(domRoot, {subtree: true, childList: true, attributes: true, attributeOldValue: true, attributeFilter: ['b37-to']})
+        observerRoot._b37LiveObserver.observe(domRoot, {subtree: true, childList: true, attributes: true, attributeOldValue: true, attributeFilter: ['b37-to', 'b37-from']})
     }},
     start: {configurable: false, enumerable: true, writable: false, value: async function() {
         globalThis.requestIdleCallback ||= function(handler) {let sT = Date.now(); return globalThis.setTimeout(function() {handler({didTimeout: false, timeRemaining: function() {return Math.max(0, 50.0 - (Date.now() - sT)) }})}, 1)}
@@ -72,12 +87,9 @@ const Live = Object.defineProperties({}, {
         globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
         for (const element of document.getElementsByTagName('*')) this._processAddedElement(element)
         this._setupObserver(this, document)
-
-
-        //let's see if a mutationObserver is required for the below...
-        for (const subscribedElement of document.querySelectorAll(`[b37-from]`)) this._processElement(subscribedElement, 'subscription')
-
     }},
+
+
     listen: {configurable: false, enumerable: true, writable: false, value: async function(key, input={}, force=false, idempotent=false, eventName=undefined, once=false, verbose=false) {
         //((input instanceof globalThis.constructor) && 'hashchange') || ((input instanceof WebSocket) && 'message')        
         let result
