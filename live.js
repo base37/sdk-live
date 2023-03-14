@@ -17,13 +17,12 @@ const Live = Object.defineProperties({}, {
         }
         globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
 
-        const connectTrigger = (toElement, toValue) => {
-            let sanitizedToValue = toValue
+        const connectTrigger = (toElement, toValue, toOptions) => {
+            const givenToValue = toValue
             toValue.includes(':') || (toValue = `:${toValue}`)
             let [eventName, processorName] = toValue.split(':')
-            if (!(this.processors[processorName]||{})?.trigger) return
             eventName ||= (['HTMLInputElement', 'HTMLSelectElement', 'HTMLTextAreaElement']).includes(toElement.constructor.name) && 'change' || 'click'
-            const triggerOptions = JSON.parse(toElement.getAttribute('b37-options')||'{}') || {}
+            const triggerOptions = JSON.parse(toElement.getAttribute('b37-to-options')||'{}') || {}
             toElement.addEventListener(eventName, event => this.processors[processorName].trigger(toElement, event), triggerOptions)            
         }, disconnectTrigger = (toElement, toValue) => {
             toValue.includes(':') || (toValue = `:${toValue}`)
@@ -35,7 +34,19 @@ const Live = Object.defineProperties({}, {
         }
 
         for (const toElement of document.querySelectorAll(`[b37-to]`)) {
-            for (const toValue of (toElement.getAttribute('b37-to')||'').split(' ')) connectTrigger(toElement, toValue)
+            const toOptionsList = (toElement.getAttribute('b37-to-options')||'').split(' '), 
+                toValuesList = (toElement.getAttribute('b37-to')||'').split(' '), toParams = [], 
+                toOptionsParsedList = []
+            for (let toValueIndex=0,toValuesListLength = toValuesList.length; toValueIndex < toValuesListLength; ++toValueIndex) {
+                toOptionsParam = toOptionsList[toValueIndex]
+                toOptionsParam === '$' && (toOptionsParam = toOptionsParsedList.at(-1))
+                toOptionsParam && toOptionsParam.length>1 & toOptionsParam[0] === '$' && (toOptionsParam = toOptionsParsedList.at(toOptionsParam.slice(1)))
+                typeof toOptionsParam === 'string' && (toOptionsParam = JSON.parse(toOptionsParam))
+                toOptionsParam ||= {}
+                toOptionsParsedList.push(toOptionsParam)
+                toParams[toValueIndex] = [toValuesList[toValueIndex], toOptionsParam]
+            }
+            for (const toParam of toParams) connectTrigger(toElement, ...toParams)
         }
 
         this._globalObserver ||= new MutationObserver(async mutationList => {
