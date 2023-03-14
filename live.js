@@ -43,13 +43,14 @@ const Live = Object.defineProperties({}, {
         fromValue.includes(':') || (fromValue = `:${fromValue}`)
         let [listenerName, processorName] = fromValue.split(':')
         listenerName ||= processorName
-        this._subscriptions[listenerName] ||= {}
-        this._subscriptions[listenerName][fromElement] ||= {}
-        if (addOrRemove==='remove' && this._subscriptions[listenerName][fromElement][givenFromValue]) {
+        if (addOrRemove==='remove' && this._subscriptions[listenerName] && this._subscriptions[listenerName][fromElement] 
+            && this._subscriptions[listenerName][fromElement][givenFromValue]) {
             delete this._subscriptions[listenerName][fromElement][givenFromValue]
             Object.keys(this._subscriptions[listenerName][fromElement]).length || (delete this._subscriptions[listenerName][fromElement])
             Object.keys(this._subscriptions[listenerName]).length || (delete this._subscriptions[listenerName])
         } else {
+            this._subscriptions[listenerName] ||= {}
+            this._subscriptions[listenerName][fromElement] ||= {}
             this._subscriptions[fromElement][givenFromValue] = [this.processors[processorName]?.subscriber || (() => {})]
 
         }
