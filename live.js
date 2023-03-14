@@ -36,8 +36,6 @@ const Live = Object.defineProperties({}, {
             toElement.addEventListener(...this._triggers[toElement][givenToValue])
         }
     }},
-
-
     _configureSubscription: {configurable: false, enumerable: false, writable: false, value: function(addOrRemove, fromElement, fromValue, fromOptions) {
         const givenFromValue = fromValue
         fromValue.includes(':') || (fromValue = `:${fromValue}`)
@@ -51,13 +49,12 @@ const Live = Object.defineProperties({}, {
         } else {
             this._subscriptions[listenerName] ||= {}
             this._subscriptions[listenerName][fromElement] ||= {}
-            this._subscriptions[fromElement][givenFromValue] = [this.processors[processorName]?.subscriber || (() => {})]
-
+            this._subscriptions[fromElement][givenFromValue] = {
+                processor: this.processors[processorName]?.subscriber || (() => {}), 
+                options: fromOptions
+            }
         }
     }},
-
-
-
     _attachLiveToElement: {configurable: false, enumerable: false, writable: false, value: function(element) {
         for (const subElement of element.shadowRoot.getElementsByTagName('*')) this._processAddedElement(subElement)
         this._setupObserver(element, element.shadowRoot)
@@ -104,33 +101,6 @@ const Live = Object.defineProperties({}, {
     }},
 
 
-    listen: {configurable: false, enumerable: true, writable: false, value: async function(key, input={}, force=false, idempotent=false, eventName=undefined, once=false, verbose=false) {
-        //((input instanceof globalThis.constructor) && 'hashchange') || ((input instanceof WebSocket) && 'message')        
-        let result
-        if (input instanceof Event) {
-            for (const d of ['detail', 'data']) {
-                if (!input[d]) continue
-                input[d] instanceof Object && (result = input[d]) && (t=1)
-                if (typeof input[d] === 'string') try {result = ((t=1) && JSON.parse(input[d]))} catch(e) {result = ((t=1) && {[eventName]: input[d]})}
-                t || (result = {[eventName]: input[d]})
-            }
-            result = this._runListener(key, result, force, idempotent, verbose)
-        }
-        if (input instanceof EventTarget) {
-            eventName ||= ((input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement) && 'change')
-                || ((input instanceof globalThis.constructor) && 'hashchange') || ((input instanceof WebSocket) && 'message') || 'click'
-            result = input.addEventListener(eventName, event => this.listen(key, event, force, idempotent, eventName, once, verbose), {once: once}) && true
-        }
-        if (input instanceof Promise) result = await this._runListener(key, await Promise.resolve(input), force, idempotent, verbose)
-        if (Array.isArray(input)) for (const i of input) result = await this._runListener(key, i, force, idempotent, verbose)
-        result || await this._runListener(key, input, force, idempotent, verbose)
-    }},
-
-
-
-
-
-
 
     _runListener: {configurable: false, enumerable: false, writable: false, value: async function(key, input={}, force=false, idempotent=false, verbose=false) {
         const listener = this.listeners[key] || {processor: key}, processorKey = listener.processor || key, 
@@ -168,6 +138,37 @@ const Live = Object.defineProperties({}, {
         }
         return true
     }},
+
+
+
+    listen: {configurable: false, enumerable: true, writable: false, value: async function(key, input={}, force=false, idempotent=false, eventName=undefined, once=false, verbose=false) {
+        //((input instanceof globalThis.constructor) && 'hashchange') || ((input instanceof WebSocket) && 'message')        
+        let result
+        if (input instanceof Event) {
+            for (const d of ['detail', 'data']) {
+                if (!input[d]) continue
+                input[d] instanceof Object && (result = input[d]) && (t=1)
+                if (typeof input[d] === 'string') try {result = ((t=1) && JSON.parse(input[d]))} catch(e) {result = ((t=1) && {[eventName]: input[d]})}
+                t || (result = {[eventName]: input[d]})
+            }
+            result = this._runListener(key, result, force, idempotent, verbose)
+        }
+        if (input instanceof EventTarget) {
+            eventName ||= ((input instanceof HTMLInputElement || input instanceof HTMLSelectElement || input instanceof HTMLTextAreaElement) && 'change')
+                || ((input instanceof globalThis.constructor) && 'hashchange') || ((input instanceof WebSocket) && 'message') || 'click'
+            result = input.addEventListener(eventName, event => this.listen(key, event, force, idempotent, eventName, once, verbose), {once: once}) && true
+        }
+        if (input instanceof Promise) result = await this._runListener(key, await Promise.resolve(input), force, idempotent, verbose)
+        if (Array.isArray(input)) for (const i of input) result = await this._runListener(key, i, force, idempotent, verbose)
+        result || await this._runListener(key, input, force, idempotent, verbose)
+    }},
+
+
+
+
+
+
+
 
 
 
