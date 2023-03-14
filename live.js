@@ -1,30 +1,28 @@
 const Live = Object.defineProperties({}, {
-    version: {configurable: false, enumerable: true, writable: false, value: '1.0.0'}, 
-    maxDelay: {configurable: false, enumerable: true, writable: true, value: 1000}, 
-    listeners: {configurable: false, enumerable: true, writable: false, value: {}}, 
-    processors: {configurable: false, enumerable: true, writable: false, value: {}}, 
-    _subscriptions: {configurable: false, enumerable: false, writable: false, value: {}}, 
-    _triggers: {configurable: false, enumerable: false, writable: false, value: {}}, 
-    
-    _globalObserver: {configurable: false, enumerable: false, writable: true, value: undefined}, 
-    fromElements: {configurable: false, enumerable: true, writable: false, value: {}}, 
-
-    _configureTrigger: {configurable: false, enumerable: false, writable: false, value: function(toElement, toValue, toOptions, remove=false) {
+    version: {configurable: false, enumerable: true, writable: false, value: '1.0.0'},
+    maxDelay: {configurable: false, enumerable: true, writable: true, value: 1000},
+    listeners: {configurable: false, enumerable: true, writable: false, value: {}},
+    processors: {configurable: false, enumerable: true, writable: false, value: {}},
+    _subscriptions: {configurable: false, enumerable: false, writable: false, value: {}},
+    _triggers: {configurable: false, enumerable: false, writable: false, value: {}},
+    _globalObserver: {configurable: false, enumerable: false, writable: true, value: undefined},
+    fromElements: {configurable: false, enumerable: true, writable: false, value: {}},
+    _configureTrigger: {configurable: false, enumerable: false, writable: false, value: function(addOrRemove, toElement, toValue, toOptions) {
         const givenToValue = toValue
         toValue.includes(':') || (toValue = `:${toValue}`)
         let [eventName, processorName] = toValue.split(':')
         eventName ||= (['HTMLInputElement', 'HTMLSelectElement', 'HTMLTextAreaElement']).includes(toElement.constructor.name) && 'change' || 'click'
         this._triggers[toElement] ||= {}
-        if (remove && this._triggers[toElement][givenToValue]) {
+        if (addOrRemove==='remove' && this._triggers[toElement][givenToValue]) {
             toElement.removeEventListener(...this._triggers[toElement][givenToValue])
         } else {
             this._triggers[toElement][givenToValue] = [eventName, event => (this.processors[processorName]?.trigger || (() => undefined))(toElement, event, toOptions), toOptions]
             toElement.addEventListener(...this._triggers[toElement][givenToValue])
-        }        
-    }}, 
+        }
+    }},
     _parseToAttribute: {configurable: false, enumerable: false, writable: false, value: function(toElement) {
-        const toOptionsList = (toElement.getAttribute('b37-to-options')||'').split(' '), 
-            toValuesList = (toElement.getAttribute('b37-to')||'').split(' '), toParams = [], 
+        const toOptionsList = (toElement.getAttribute('b37-to-options')||'').split(' '),
+            toValuesList = (toElement.getAttribute('b37-to')||'').split(' '), toParams = [],
             toOptionsParsedList = []
         for (let toValueIndex=0,toValuesListLength = toValuesList.length; toValueIndex < toValuesListLength; ++toValueIndex) {
             let toOptionsParam = toOptionsList[toValueIndex]
@@ -36,9 +34,7 @@ const Live = Object.defineProperties({}, {
             toParams[toValueIndex] = [toValuesList[toValueIndex], toOptionsParam]
         }
         return toParams
-    }}, 
-
-
+    }},
     start: {configurable: false, enumerable: true, writable: false, value: async function() {
         globalThis.requestIdleCallback ||= function(handler) {let sT = Date.now(); return globalThis.setTimeout(function() {handler({didTimeout: false, timeRemaining: function() {return Math.max(0, 50.0 - (Date.now() - sT)) }})}, 1)}
         const run = () => {
@@ -48,20 +44,22 @@ const Live = Object.defineProperties({}, {
         globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
 
         for (const toElement of document.querySelectorAll(`[b37-to]`)) {
-            for (const toParam of this._parseToAttribute(toElement)) this._configureTrigger(toElement, ...toParam)
+            for (const toParam of this._parseToAttribute(toElement)) this._configureTrigger('add', toElement, ...toParam)
         }
 
         this._globalObserver ||= new MutationObserver(async mutationList => {
             for (const mutationRecord of mutationList) {
                 if (mutationRecord.type === 'childList') {
-                    for (const addedNode of mutationRecord.addedNodes) addedNode.hasAttribute('b37-to') && connectTrigger(addedNode)
+                    for (const toElement of mutationRecord.addedNodes) {
+                        !toElement.hasAttribute('b37-to') continue
+                        for (const toParam of this._parseToAttribute(toElement)) this._configureTrigger('add', toElement, ...toParam)
+                    }
                 }
                 if (mutationRecord.type === 'attributes') {
                     if (mutationRecord.attributeName === 'b37-to') {
-                        disconnectTrigger(mutationRecord.target, mutationRecord.oldValue)
-                        connectTrigger(toElement)
+                        for (const toParam of this._parseToAttribute(toElement)) this._configureTrigger('remove', toElement, ...toParam)
+                        for (const toParam of this._parseToAttribute(toElement)) this._configureTrigger('add', toElement, ...toParam)
                     }
-
                 }
             }
         })
