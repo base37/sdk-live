@@ -29,6 +29,8 @@ const Live = Object.defineProperties({}, {
         this._triggers[toElement] ||= {}
         if (addOrRemove==='remove' && this._triggers[toElement][givenToValue]) {
             toElement.removeEventListener(...this._triggers[toElement][givenToValue])
+            delete this._triggers[toElement][givenToValue]
+            Object.keys(this._triggers[toElement]).length || (delete this._triggers[toElement])
         } else {
             this._triggers[toElement][givenToValue] = [eventName, event => (this.processors[processorName]?.trigger || (() => undefined))(toElement, event, toOptions), toOptions]
             toElement.addEventListener(...this._triggers[toElement][givenToValue])
@@ -42,12 +44,12 @@ const Live = Object.defineProperties({}, {
         let [listenerName, processorName] = fromValue.split(':')
         listenerName ||= processorName
         this._subscriptions[fromElement] ||= {}
-        if (addOrRemove==='remove' && this._subscriptions[toElement][givenFromValue]) {
-
-
+        if (addOrRemove==='remove' && this._subscriptions[fromElement][givenFromValue]) {
+            delete this._subscriptions[fromElement][givenFromValue]
+            Object.keys(this._subscriptions[fromElement]).length || (delete this._subscriptions[fromElement])
         } else {
 
-            
+
         }
     }},
 
