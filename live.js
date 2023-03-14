@@ -9,6 +9,36 @@ const Live = Object.defineProperties({}, {
     _globalObserver: {configurable: false, enumerable: false, writable: true, value: undefined}, 
     fromElements: {configurable: false, enumerable: true, writable: false, value: {}}, 
 
+    _configureTrigger: {configurable: false, enumerable: false, writable: false, value: function(toElement, toValue, toOptions, remove=false) {
+        const givenToValue = toValue
+        toValue.includes(':') || (toValue = `:${toValue}`)
+        let [eventName, processorName] = toValue.split(':')
+        eventName ||= (['HTMLInputElement', 'HTMLSelectElement', 'HTMLTextAreaElement']).includes(toElement.constructor.name) && 'change' || 'click'
+        this._triggers[toElement] ||= {}
+        if (remove && this._triggers[toElement][givenToValue]) {
+            toElement.removeEventListener(...this._triggers[toElement][givenToValue])
+        } else {
+            this._triggers[toElement][givenToValue] = [eventName, event => (this.processors[processorName]?.trigger || (() => undefined))(toElement, event, toOptions), toOptions]
+            toElement.addEventListener(...this._triggers[toElement][givenToValue])
+        }        
+    }}, 
+    _parseToAttribute: {configurable: false, enumerable: false, writable: false, value: function(toElement) {
+        const toOptionsList = (toElement.getAttribute('b37-to-options')||'').split(' '), 
+            toValuesList = (toElement.getAttribute('b37-to')||'').split(' '), toParams = [], 
+            toOptionsParsedList = []
+        for (let toValueIndex=0,toValuesListLength = toValuesList.length; toValueIndex < toValuesListLength; ++toValueIndex) {
+            toOptionsParam = toOptionsList[toValueIndex]
+            toOptionsParam === '$' && (toOptionsParam = toOptionsParsedList.at(-1))
+            toOptionsParam && toOptionsParam.length>1 & toOptionsParam[0] === '$' && (toOptionsParam = toOptionsParsedList.at(toOptionsParam.slice(1)))
+            typeof toOptionsParam === 'string' && (toOptionsParam = JSON.parse(toOptionsParam))
+            toOptionsParam ||= {}
+            toOptionsParsedList.push(toOptionsParam)
+            toParams[toValueIndex] = [toValuesList[toValueIndex], toOptionsParam]
+        }
+        return toParams
+    }}, 
+
+
     start: {configurable: false, enumerable: true, writable: false, value: async function() {
         globalThis.requestIdleCallback ||= function(handler) {let sT = Date.now(); return globalThis.setTimeout(function() {handler({didTimeout: false, timeRemaining: function() {return Math.max(0, 50.0 - (Date.now() - sT)) }})}, 1)}
         const run = () => {
@@ -17,34 +47,8 @@ const Live = Object.defineProperties({}, {
         }
         globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
 
-        const configureTrigger = (toElement, toValue, toOptions, remove=false) => {
-            const givenToValue = toValue
-            toValue.includes(':') || (toValue = `:${toValue}`)
-            let [eventName, processorName] = toValue.split(':')
-            eventName ||= (['HTMLInputElement', 'HTMLSelectElement', 'HTMLTextAreaElement']).includes(toElement.constructor.name) && 'change' || 'click'
-            this._triggers[toElement] ||= {}
-            if (remove && this._triggers[toElement][givenToValue]) {
-                toElement.removeEventListener(...this._triggers[toElement][givenToValue])
-            } else {
-                this._triggers[toElement][givenToValue] = [eventName, event => (this.processors[processorName]?.trigger || (() => undefined))(toElement, event, toOptions), toOptions]
-                toElement.addEventListener(...this._triggers[toElement][givenToValue])
-            }
-        }
-
         for (const toElement of document.querySelectorAll(`[b37-to]`)) {
-            const toOptionsList = (toElement.getAttribute('b37-to-options')||'').split(' '), 
-                toValuesList = (toElement.getAttribute('b37-to')||'').split(' '), toParams = [], 
-                toOptionsParsedList = []
-            for (let toValueIndex=0,toValuesListLength = toValuesList.length; toValueIndex < toValuesListLength; ++toValueIndex) {
-                toOptionsParam = toOptionsList[toValueIndex]
-                toOptionsParam === '$' && (toOptionsParam = toOptionsParsedList.at(-1))
-                toOptionsParam && toOptionsParam.length>1 & toOptionsParam[0] === '$' && (toOptionsParam = toOptionsParsedList.at(toOptionsParam.slice(1)))
-                typeof toOptionsParam === 'string' && (toOptionsParam = JSON.parse(toOptionsParam))
-                toOptionsParam ||= {}
-                toOptionsParsedList.push(toOptionsParam)
-                toParams[toValueIndex] = [toValuesList[toValueIndex], toOptionsParam]
-            }
-            for (const toParam of toParams) configureTrigger(toElement, ...toParams)
+            for (const toParam of toParams) this._configureTrigger(toElement, ...this._parseToAttribute(toElement))
         }
 
         this._globalObserver ||= new MutationObserver(async mutationList => {
