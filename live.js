@@ -6,6 +6,7 @@ const Live = Object.defineProperties({}, {
     _subscriptions: {configurable: false, enumerable: false, writable: false, value: {}}, 
     _triggers: {configurable: false, enumerable: false, writable: false, value: {}}, 
     
+    _globalObserver: {configurable: false, enumerable: false, writable: true, value: undefined}, 
     fromElements: {configurable: false, enumerable: true, writable: false, value: {}}, 
 
     start: {configurable: false, enumerable: true, writable: false, value: async function() {
@@ -25,7 +26,18 @@ const Live = Object.defineProperties({}, {
             toElement.addEventListener(eventName, event => this.processors[processorName].trigger(toElement, event), 
                 this.processors[processorName]?.triggerOptions || {})
         }
-        
+
+        this._globalObserver ||= new MutationObserver(async mutationList => {
+            for (const mutationRecord of mutationList) {
+                for (const addedNode of mutationRecord.addedNodes) {
+                    if (!addedNode?.tagName?.includes('-')) continue
+                    const tagName = addedNode.tagName.toLowerCase()
+                    this.ids[tagName] || await this.activateTag(tagName)
+                    for (const customElement of domTraverser.call(domRoot, tagName)) this.applyTheme(customElement, true)
+                }
+            }
+        })
+        this._globalObserver.observe(domRoot, {subtree: true, childList: true, attributes: true})
 
 
         //let's see if a mutationObserver is required for the below...
