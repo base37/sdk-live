@@ -7,19 +7,6 @@ const Live = Object.defineProperties({}, {
     _triggers: {configurable: false, enumerable: false, writable: false, value: {}},
     _b37LiveObserver: {configurable: false, enumerable: false, writable: true, value: undefined},
     fromElements: {configurable: false, enumerable: true, writable: false, value: {}},
-    _configureTrigger: {configurable: false, enumerable: false, writable: false, value: function(addOrRemove, toElement, toValue, toOptions) {
-        const givenToValue = toValue
-        toValue.includes(':') || (toValue = `:${toValue}`)
-        let [eventName, processorName] = toValue.split(':')
-        eventName ||= (['HTMLInputElement', 'HTMLSelectElement', 'HTMLTextAreaElement']).includes(toElement.constructor.name) && 'change' || 'click'
-        this._triggers[toElement] ||= {}
-        if (addOrRemove==='remove' && this._triggers[toElement][givenToValue]) {
-            toElement.removeEventListener(...this._triggers[toElement][givenToValue])
-        } else {
-            this._triggers[toElement][givenToValue] = [eventName, event => (this.processors[processorName]?.trigger || (() => undefined))(toElement, event, toOptions), toOptions]
-            toElement.addEventListener(...this._triggers[toElement][givenToValue])
-        }
-    }},
     _parseToFromAttribute: {configurable: false, enumerable: false, writable: false, value: function(element, toFrom) {
         const optionsList = (element.getAttribute(`b37-${toFrom}-options`)||'').split(' '),
             valuesList = (element.getAttribute(`b37-${toFrom}`)||'').split(' '), params = [], optionsParsedList = []
@@ -34,9 +21,34 @@ const Live = Object.defineProperties({}, {
         }
         return params
     }},
+    _configureTrigger: {configurable: false, enumerable: false, writable: false, value: function(addOrRemove, toElement, toValue, toOptions) {
+        const givenToValue = toValue
+        toValue.includes(':') || (toValue = `:${toValue}`)
+        let [eventName, processorName] = toValue.split(':')
+        eventName ||= (['HTMLInputElement', 'HTMLSelectElement', 'HTMLTextAreaElement']).includes(toElement.constructor.name) && 'change' || 'click'
+        this._triggers[toElement] ||= {}
+        if (addOrRemove==='remove' && this._triggers[toElement][givenToValue]) {
+            toElement.removeEventListener(...this._triggers[toElement][givenToValue])
+        } else {
+            this._triggers[toElement][givenToValue] = [eventName, event => (this.processors[processorName]?.trigger || (() => undefined))(toElement, event, toOptions), toOptions]
+            toElement.addEventListener(...this._triggers[toElement][givenToValue])
+        }
+    }},
 
 
     _configureSubscription: {configurable: false, enumerable: false, writable: false, value: function(addOrRemove, fromElement, fromValue, fromOptions) {
+        const givenFromValue = fromValue
+        fromValue.includes(':') || (fromValue = `:${fromValue}`)
+        let [listenerName, processorName] = fromValue.split(':')
+        listenerName ||= processorName
+        this._subscriptions[fromElement] ||= {}
+        if (addOrRemove==='remove' && this._subscriptions[toElement][givenFromValue]) {
+
+
+        } else {
+
+            
+        }
     }},
 
 
