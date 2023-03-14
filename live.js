@@ -51,7 +51,7 @@ const Live = Object.defineProperties({}, {
             for (const mutationRecord of mutationList) {
                 if (mutationRecord.type === 'childList') {
                     for (const toElement of mutationRecord.addedNodes) {
-                        !toElement.hasAttribute('b37-to') continue
+                        if (!toElement.hasAttribute('b37-to')) continue
                         for (const toParam of this._parseToAttribute(toElement)) this._configureTrigger('add', toElement, ...toParam)
                     }
                 }
