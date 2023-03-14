@@ -32,7 +32,7 @@ const Live = Object.defineProperties({}, {
             delete this._triggers[toElement][givenToValue]
             Object.keys(this._triggers[toElement]).length || (delete this._triggers[toElement])
         } else {
-            this._triggers[toElement][givenToValue] = [eventName, event => (this.processors[processorName]?.trigger || (() => undefined))(toElement, event, toOptions), toOptions]
+            this._triggers[toElement][givenToValue] = [eventName, event => (this.processors[processorName]?.trigger || (() => {}))(toElement, event, toOptions), toOptions]
             toElement.addEventListener(...this._triggers[toElement][givenToValue])
         }
     }},
@@ -43,12 +43,14 @@ const Live = Object.defineProperties({}, {
         fromValue.includes(':') || (fromValue = `:${fromValue}`)
         let [listenerName, processorName] = fromValue.split(':')
         listenerName ||= processorName
-        this._subscriptions[fromElement] ||= {}
-        if (addOrRemove==='remove' && this._subscriptions[fromElement][givenFromValue]) {
-            delete this._subscriptions[fromElement][givenFromValue]
-            Object.keys(this._subscriptions[fromElement]).length || (delete this._subscriptions[fromElement])
+        this._subscriptions[listenerName] ||= {}
+        this._subscriptions[listenerName][fromElement] ||= {}
+        if (addOrRemove==='remove' && this._subscriptions[listenerName][fromElement][givenFromValue]) {
+            delete this._subscriptions[listenerName][fromElement][givenFromValue]
+            Object.keys(this._subscriptions[listenerName][fromElement]).length || (delete this._subscriptions[listenerName][fromElement])
+            Object.keys(this._subscriptions[listenerName]).length || (delete this._subscriptions[listenerName])
         } else {
-
+            this._subscriptions[fromElement][givenFromValue] = [this.processors[processorName]?.subscriber || (() => {})]
 
         }
     }},
