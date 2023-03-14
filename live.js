@@ -5,14 +5,14 @@ const Live = Object.defineProperties({}, {
     processors: {configurable: false, enumerable: true, writable: false, value: {}}, 
     _subscriptions: {configurable: false, enumerable: false, writable: false, value: {}}, 
     _triggers: {configurable: false, enumerable: false, writable: false, value: {}}, 
+    getHandlerType: {configurable: false, enumerable: true, writable: false, value: input => (input?.subscriber && input?.listener instanceof Object && 'subscription') 
+            || (input?.triggersource && input?.map instanceof Object && 'trigger') || 'listener'
+    }, 
     start: {configurable: false, enumerable: true, writable: false, value: async function() {
         const $this = this
         globalThis.requestIdleCallback ||= function(handler) {let sT = Date.now(); return globalThis.setTimeout(function() {handler({didTimeout: false, timeRemaining: function() {return Math.max(0, 50.0 - (Date.now() - sT)) }})}, 1)}
         globalThis.requestIdleCallback(function() { $this._run($this) }, {options: $this.maxDelay || 1000})
     }}, 
-    getHandlerType: {configurable: false, enumerable: true, writable: false, value: input => (input?.subscriber && input?.listener instanceof Object && 'subscription') 
-            || (input?.triggersource && input?.map instanceof Object && 'trigger') || 'listener'
-    }, 
     listen: {configurable: false, enumerable: true, writable: false, value: async function(key, input={}, force=false, idempotent=false, eventName=undefined, once=false, verbose=false) {
         let result
         if (input instanceof Event) {
