@@ -34,9 +34,9 @@ const Live = Object.defineProperties({}, {
         result || await this._runListener(key, input, force, idempotent, verbose)
     }}, 
     _runListener: {configurable: false, enumerable: false, writable: false, value: async function(key, input={}, force=false, idempotent=false, verbose=false) {
-        const listener = this.listeners[key] || {processor: key}, processorKey = listener.processor || key , 
-            processor = this.processors[processorKey]?.listener || this.processors[processorKey] || input => input, now = Date.now()
-        if (!((listener instanceof Object) && (force || (!force && !listener.expired && !listener.maxed)))) return true  
+        const listener = this.listeners[key] || {processor: key}, processorKey = listener.processor || key, 
+            processor = this.processors[processorKey]?.listener || this.processors[processorKey] || (input => input), now = Date.now()
+        if (!((listener instanceof Object) && (force || (!force && !listener.expired && !listener.maxed)))) return true
         if (force || !listener.period || (listener.period && (((listener.previous || 0) + listener.period) <= now))) {
             if (!force && !listener.expired && (listener.expires && (listener.expires <= now))) {
                 listener.expired = true
@@ -96,7 +96,7 @@ const Live = Object.defineProperties({}, {
                     }                    
                 }
             }
-            for (const vector of vectorList) {
+            for (let vector of vectorList) {
                 if (firstPass) {
                     const originalVector = vector
                     let colonIndex = vector.indexOf(':')
