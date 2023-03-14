@@ -10,7 +10,17 @@ const Live = Object.defineProperties({}, {
     },
     start: {configurable: false, enumerable: true, writable: false, value: async function() {
         globalThis.requestIdleCallback ||= function(handler) {let sT = Date.now(); return globalThis.setTimeout(function() {handler({didTimeout: false, timeRemaining: function() {return Math.max(0, 50.0 - (Date.now() - sT)) }})}, 1)}
-        globalThis.requestIdleCallback(() => this._run(), {options: this.maxDelay || 1000})
+        const run = () => {
+            for (const k in this.listeners) if (this.listeners[k].period) this._runListener(k)
+            globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
+        }
+        globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
+
+        for (const subscribedElement of document.querySelectorAll(`[b37-from]`)) this._processElement(subscribedElement, 'subscription')
+        for (const triggeringElement of document.querySelectorAll(`[b37-to]`)) this._processElement(triggeringElement, 'trigger')
+
+
+
     }},
     listen: {configurable: false, enumerable: true, writable: false, value: async function(key, input={}, force=false, idempotent=false, eventName=undefined, once=false, verbose=false) {
         let result
@@ -31,15 +41,7 @@ const Live = Object.defineProperties({}, {
         if (input instanceof Promise) result = await this._runListener(key, await Promise.resolve(input), force, idempotent, verbose)
         if (Array.isArray(input)) for (const i of input) result = await this._runListener(key, i, force, idempotent, verbose)
         result || await this._runListener(key, input, force, idempotent, verbose)
-    }}, 
-
-
-    _run: {configurable: false, enumerable: false, writable: false, value: function() {
-        for (const k in this.listeners) if (this.listeners[k].period) this._runListener(k)
-        for (const subscribedElement of document.querySelectorAll(`[b37-from]`)) this._processElement(subscribedElement, 'subscription')
-        for (const triggeringElement of document.querySelectorAll(`[b37-to]`)) this._processElement(triggeringElement, 'trigger')
-        globalThis.requestIdleCallback(() => this._run(), {options: this.maxDelay || 1000})
-    }}, 
+    }},
 
 
     _processElement: {configurable: false, enumerable: false, writable: false, value: function(element, type) {
