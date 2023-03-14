@@ -36,25 +36,19 @@ const Live = Object.defineProperties({}, {
         return toParams
     }},
     _attachLiveToElement: {configurable: false, enumerable: false, writable: false, value: function(element) {
-
+        for (const subElement of element.shadowRoot.getElementsByTagName('*')) this._processAddedElement(subElement)
+        this._setupObserver(element, element.shadowRoot)
     }},
     _processAddedElement: {configurable: false, enumerable: false, writable: false, value: function(element) {
         if (element.hasAttribute('b37-to')) {
             for (const toParam of this._parseToAttribute(element)) this._configureTrigger('add', element, ...toParam)
         }
-        if (element.tagName.includes('-') && element.b37Dataset) {
+        if (element.tagName.includes('-') && element.shadowRoot && element.b37Dataset) {
             this._attachLiveToElement(element)
         }
     }},
-    start: {configurable: false, enumerable: true, writable: false, value: async function() {
-        globalThis.requestIdleCallback ||= function(handler) {let sT = Date.now(); return globalThis.setTimeout(function() {handler({didTimeout: false, timeRemaining: function() {return Math.max(0, 50.0 - (Date.now() - sT)) }})}, 1)}
-        const run = () => {
-            for (const k in this.listeners) if (this.listeners[k].period) this._runListener(k)
-            globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
-        }
-        globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
-        for (const element of document.getElementsByTagName('*')) this._processAddedElement(element)
-        this._b37ElementThemeObserver ||= new MutationObserver(async mutationList => {
+    _setupObserver: {configurable: false, enumerable: false, writable: false, value: function(observerRoot, domRoot) {
+        observerRoot._b37ElementThemeObserver ||= new MutationObserver(async mutationList => {
             for (const mutationRecord of mutationList) {
                 if (mutationRecord.type === 'childList') {
                     for (const element of mutationRecord.addedNodes) this._processAddedElement(element)
@@ -67,7 +61,17 @@ const Live = Object.defineProperties({}, {
                 }
             }
         })
-        this._b37ElementThemeObserver.observe(document, {subtree: true, childList: true, attributes: true, attributeOldValue: true, attributeFilter: ['b37-to']})
+        observerRoot._b37ElementThemeObserver.observe(domRoot, {subtree: true, childList: true, attributes: true, attributeOldValue: true, attributeFilter: ['b37-to']})
+    }},
+    start: {configurable: false, enumerable: true, writable: false, value: async function() {
+        globalThis.requestIdleCallback ||= function(handler) {let sT = Date.now(); return globalThis.setTimeout(function() {handler({didTimeout: false, timeRemaining: function() {return Math.max(0, 50.0 - (Date.now() - sT)) }})}, 1)}
+        const run = () => {
+            for (const k in this.listeners) if (this.listeners[k].period) this._runListener(k)
+            globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
+        }
+        globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
+        for (const element of document.getElementsByTagName('*')) this._processAddedElement(element)
+        this._setupObserver(this, document)
 
 
         //let's see if a mutationObserver is required for the below...
