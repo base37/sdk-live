@@ -53,9 +53,7 @@ const Live = Object.defineProperties({}, {
             globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
         }
         globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
-
         for (const element of document.getElementsByTagName('*')) this._processAddedElement(element)
-
         this._b37ElementThemeObserver ||= new MutationObserver(async mutationList => {
             for (const mutationRecord of mutationList) {
                 if (mutationRecord.type === 'childList') {
