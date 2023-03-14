@@ -103,9 +103,10 @@ const Live = Object.defineProperties({}, {
 
 
     _runListener: {configurable: false, enumerable: false, writable: false, value: async function(key, input={}, force=false, idempotent=false, verbose=false) {
-        const listener = this.listeners[key] || {processor: key}, processorKey = listener.processor || key, 
-            processor = this.processors[processorKey]?.listener || this.processors[processorKey] || (input => input), now = Date.now()
-        if (!((listener instanceof Object) && (force || (!force && !listener.expired && !listener.maxed)))) return true
+        const listener = this.listeners[key] || {}, processorKey = listener.processor || key, 
+            processor = (this.processors[processorKey]|| {})?.listener || (input => input), now = Date.now()
+        if ((typeof processor !== 'function') || !(listener instanceof Object) || (!force && (listener.expired || listener.maxed))) return false
+
         if (force || !listener.period || (listener.period && (((listener.previous || 0) + listener.period) <= now))) {
             if (!force && !listener.expired && (listener.expires && (listener.expires <= now))) {
                 listener.expired = true
@@ -125,7 +126,6 @@ const Live = Object.defineProperties({}, {
                 listener.max && !listener.maxed && (listener.count == listener.max) && (listener.maxed = true) 
                     && globalThis.dispatchEvent(new CustomEvent(`b37ListenerMaxed`, {detail: {listener: key, input: input}}))
                     && globalThis.dispatchEvent(new CustomEvent(`b37ListenerMaxed-${key}`, {detail: {listener: key, input: input}}))
-
                 listener.expires && listener.period && ((now + listener.period) >= listener.expires) && (listener.expired = true)
                     && globalThis.dispatchEvent(new CustomEvent(`b37ListenerExpired`, {detail: {listener: key, input: input}}))
                     && globalThis.dispatchEvent(new CustomEvent(`b37ListenerExpired-${key}`, {detail: {listener: key, input: input}}))
