@@ -17,27 +17,42 @@ const Live = Object.defineProperties({}, {
         }
         globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
 
-        for (const toElement of document.querySelectorAll(`[b37-to]`)) {
-            let toValue = toElement.getAttribute('b37-to')
+        const connectTrigger = (toElement, toValue) => {
+            let sanitizedToValue = toValue
             toValue.includes(':') || (toValue = `:${toValue}`)
             let [eventName, processorName] = toValue.split(':')
-            if (!(this.processors[processorName]||{})?.trigger) continue
+            if (!(this.processors[processorName]||{})?.trigger) return
             eventName ||= (['HTMLInputElement', 'HTMLSelectElement', 'HTMLTextAreaElement']).includes(toElement.constructor.name) && 'change' || 'click'
-            toElement.addEventListener(eventName, event => this.processors[processorName].trigger(toElement, event), 
-                this.processors[processorName]?.triggerOptions || {})
+            const triggerOptions = JSON.parse(toElement.getAttribute('b37-options')||'{}') || {}
+            toElement.addEventListener(eventName, event => this.processors[processorName].trigger(toElement, event), triggerOptions)            
+        }, disconnectTrigger = (toElement, toValue) => {
+            toValue.includes(':') || (toValue = `:${toValue}`)
+            let [eventName, processorName] = toValue.split(':')
+            if (!(this.processors[processorName]||{})?.trigger) return
+            eventName ||= (['HTMLInputElement', 'HTMLSelectElement', 'HTMLTextAreaElement']).includes(toElement.constructor.name) && 'change' || 'click'
+
+
+        }
+
+        for (const toElement of document.querySelectorAll(`[b37-to]`)) {
+            for (const toValue of (toElement.getAttribute('b37-to')||'').split(' ')) connectTrigger(toElement, toValue)
         }
 
         this._globalObserver ||= new MutationObserver(async mutationList => {
             for (const mutationRecord of mutationList) {
-                for (const addedNode of mutationRecord.addedNodes) {
-                    if (!addedNode?.tagName?.includes('-')) continue
-                    const tagName = addedNode.tagName.toLowerCase()
-                    this.ids[tagName] || await this.activateTag(tagName)
-                    for (const customElement of domTraverser.call(domRoot, tagName)) this.applyTheme(customElement, true)
+                if (mutationRecord.type === 'childList') {
+                    for (const addedNode of mutationRecord.addedNodes) addedNode.hasAttribute('b37-to') && connectTrigger(addedNode)
+                }
+                if (mutationRecord.type === 'attributes') {
+                    if (mutationRecord.attributeName === 'b37-to') {
+                        disconnectTrigger(mutationRecord.target, mutationRecord.oldValue)
+                        connectTrigger(toElement)
+                    }
+
                 }
             }
         })
-        this._globalObserver.observe(domRoot, {subtree: true, childList: true, attributes: true})
+        this._globalObserver.observe(document, {subtree: true, childList: true, attributes: true, attributeOldValue: true, attributeFilter: ['b37-to']})
 
 
         //let's see if a mutationObserver is required for the below...
