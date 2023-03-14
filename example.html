@@ -26,7 +26,7 @@
     <h2>
         Button Test
     </h2>
-    <button id="button" b37-do="click:button">Click!</button>
+    <button id="button" b37-to="click:button">Click!</button>
     <p b37-from="button">---</p>
     <small>Click the button to see new text above with timestamp.</small>
     
@@ -35,7 +35,7 @@
     <h2>
         Promise Test
     </h2>
-    <button id="promise" b37-do="promise">Fetch!</button>
+    <button id="promise" b37-to="promise">Fetch!</button>
     <p b37-from="promise">---</p>
     <small>Click the button to see new text above with retrieved from API via REST request.</small>
     
@@ -44,7 +44,7 @@
     <h2>
         Waiting Fail Test
     </h2>
-    <button id="waitingfail" b37-do="waitingfail">Fetch!</button>
+    <button id="waitingfail" b37-to="waitingfail">Fetch!</button>
     <p b37-from="waitingfail">---</p>
     <small>Click the button to see new text above with retrieved from API via REST request, with a waiting message displayed during fetch... except it doesn't work as expected - all inputs in the array are processed in order, but only the last result is displayed.</small>
     
@@ -53,7 +53,7 @@
     <h2>
         Waiting Test
     </h2>
-    <button id="waiting" b37-do="waiting">Fetch!</button>
+    <button id="waiting" b37-to="waiting">Fetch!</button>
     <p b37-from="waiting">---</p>
     <small>Click the button to see new text above with retrieved from API via REST request, with a waiting message displayed during fetch. This time working as expected.</small>
     
@@ -62,7 +62,7 @@
     <h2>
         Field Test
     </h2>
-    <input id="field" b37-do="change:field" />
+    <input id="field" b37-to="change:field" />
     <p b37-from="field">---</p>
     <small>This will update with the text from the input on field change</small>
     
