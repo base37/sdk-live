@@ -40,7 +40,7 @@ const Live = Object.defineProperties({}, {
         for (const subscribedElement of document.querySelectorAll(`[b37-from]`)) $this._processElement(subscribedElement, 'subscription')
         for (const triggeringElement of document.querySelectorAll(`[b37-to]`)) $this._processElement(triggeringElement, 'trigger')
         globalThis.requestIdleCallback(function() { $this._run($this) }, {options: $this.maxDelay || 1000})
-    }}
+    }}, 
 
 
     _processElement: {configurable: false, enumerable: false, writable: false, value: function(element, type) {
@@ -113,7 +113,7 @@ const Live = Object.defineProperties({}, {
                 }
             }
             firstPass && element.setAttribute(attrName, (listAttributeValueChanged?cleanVectors:vectorList).sort().join(' '))
-    }}
+    }}, 
 
 
 
