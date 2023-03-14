@@ -48,7 +48,7 @@ const Live = Object.defineProperties({}, {
         }
     }},
     _setupObserver: {configurable: false, enumerable: false, writable: false, value: function(observerRoot, domRoot) {
-        observerRoot._b37ElementThemeObserver ||= new MutationObserver(async mutationList => {
+        observerRoot._b37LiveObserver ||= new MutationObserver(async mutationList => {
             for (const mutationRecord of mutationList) {
                 if (mutationRecord.type === 'childList') {
                     for (const element of mutationRecord.addedNodes) this._processAddedElement(element)
@@ -61,7 +61,7 @@ const Live = Object.defineProperties({}, {
                 }
             }
         })
-        observerRoot._b37ElementThemeObserver.observe(domRoot, {subtree: true, childList: true, attributes: true, attributeOldValue: true, attributeFilter: ['b37-to']})
+        observerRoot._b37LiveObserver.observe(domRoot, {subtree: true, childList: true, attributes: true, attributeOldValue: true, attributeFilter: ['b37-to']})
     }},
     start: {configurable: false, enumerable: true, writable: false, value: async function() {
         globalThis.requestIdleCallback ||= function(handler) {let sT = Date.now(); return globalThis.setTimeout(function() {handler({didTimeout: false, timeRemaining: function() {return Math.max(0, 50.0 - (Date.now() - sT)) }})}, 1)}
