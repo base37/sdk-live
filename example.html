@@ -124,30 +124,8 @@
             }
         }
         L.listen('websocket', websocket)
-
-
-        /***
-         *  any of the above processors could be re-written using a single function instead of an object and switching via getHandlerType
-         * for example
-
-        L.processors.websocket = function(input) {
-            switch(L.getHandlerType(input)) {
-                case 'listener': 
-                    return input
-                break
-                case 'subscription':
-                    return {'#innerHTML': input.result.message}
-                break
-                case 'trigger': 
-                    L.listen('websocket', {message: 'sending via websocket...'})
-                    websocket.send(input.properties.value || '[blank]')
-                break
-            }
-        }
-
-        */
-
         await L.start()
+        
       /* optional to allow for live console inspection of the Live library */
         window.L = L
 

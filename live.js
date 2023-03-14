@@ -5,9 +5,9 @@ const Live = Object.defineProperties({}, {
     processors: {configurable: false, enumerable: true, writable: false, value: {}}, 
     _subscriptions: {configurable: false, enumerable: false, writable: false, value: {}}, 
     _triggers: {configurable: false, enumerable: false, writable: false, value: {}}, 
-    getHandlerType: {configurable: false, enumerable: true, writable: false, value: input => (input?.subscriber && input?.listener instanceof Object && 'subscription') 
-            || (input?.triggersource && input?.map instanceof Object && 'trigger') || 'listener'
-    },
+    
+    fromElements: {configurable: false, enumerable: true, writable: false, value: {}}, 
+
     start: {configurable: false, enumerable: true, writable: false, value: async function() {
         globalThis.requestIdleCallback ||= function(handler) {let sT = Date.now(); return globalThis.setTimeout(function() {handler({didTimeout: false, timeRemaining: function() {return Math.max(0, 50.0 - (Date.now() - sT)) }})}, 1)}
         const run = () => {
@@ -16,13 +16,25 @@ const Live = Object.defineProperties({}, {
         }
         globalThis.requestIdleCallback(run, {options: this.maxDelay || 1000})
 
+        for (const toElement of document.querySelectorAll(`[b37-to]`)) {
+            let toValue = toElement.getAttribute('b37-to')
+            toValue.includes(':') || (toValue = `:${toValue}`)
+            let [eventName, processorName] = toValue.split(':')
+            if (!(this.processors[processorName]||{})?.trigger) continue
+            eventName ||= (['HTMLInputElement', 'HTMLSelectElement', 'HTMLTextAreaElement']).includes(toElement.constructor.name) && 'change' || 'click'
+            toElement.addEventListener(eventName, event => this.processors[processorName].trigger(toElement, event), 
+                this.processors[processorName]?.triggerOptions || {})
+        }
+        
+
+
+        //let's see if a mutationObserver is required for the below...
         for (const subscribedElement of document.querySelectorAll(`[b37-from]`)) this._processElement(subscribedElement, 'subscription')
         for (const triggeringElement of document.querySelectorAll(`[b37-to]`)) this._processElement(triggeringElement, 'trigger')
 
-
-
     }},
     listen: {configurable: false, enumerable: true, writable: false, value: async function(key, input={}, force=false, idempotent=false, eventName=undefined, once=false, verbose=false) {
+        //((input instanceof globalThis.constructor) && 'hashchange') || ((input instanceof WebSocket) && 'message')        
         let result
         if (input instanceof Event) {
             for (const d of ['detail', 'data']) {
